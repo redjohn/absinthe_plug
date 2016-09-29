@@ -52,15 +52,25 @@ add "&raw" to the end of the URL within a browser.
         otherParams[k] = parameters[k];
       }
     }
-    var fetchURL = locationQuery(otherParams);
+    var fetchURL =
+      <%= if fetch_path do %>
+        window.location.origin + '<%= fetch_path %>' + locationQuery(otherParams);
+      <% else %>
+         locationQuery(otherParams);
+      <% end %>
     // Defines a GraphQL fetcher using the fetch API.
     function graphQLFetcher(graphQLParams) {
+      var headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      <%= for {key, val} <- Map.to_list(headers) do %>
+        headers["<%= key %>"] = "<%= val %>";
+      <% end %>
+
       return fetch(fetchURL, {
         method: 'post',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
+        headers: headers,
         body: JSON.stringify(graphQLParams),
         credentials: 'include',
       }).then(function (response) {
