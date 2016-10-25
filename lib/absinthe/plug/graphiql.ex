@@ -14,7 +14,8 @@ defmodule Absinthe.Plug.GraphiQL do
   require EEx
   @graphiql_version "0.7.1"
   EEx.function_from_file :defp, :graphiql_html, Path.join(__DIR__, "graphiql.html.eex"),
-    [:graphiql_version, :query_string, :variables_string, :result_string, :fetch_path, :headers]
+    [:graphiql_version, :query_string, :variables_string, :result_string,
+     :graphql_endpoint, :headers]
 
 
   @behaviour Plug
@@ -23,14 +24,19 @@ defmodule Absinthe.Plug.GraphiQL do
   import Absinthe.Plug, only: [prepare: 3, setup_pipeline: 3, load_body_and_params: 1]
 
   @type opts :: [
-    fetch_path: String.t,
+    schema: atom,
+    adapter: atom,
+    path: binary,
+    context: map,
+    json_codec: atom | {atom, Keyword.t},
+    graphql_endpoint: String.t,
     headers: map,
   ]
 
   @spec init(opts :: opts) :: map
   def init(opts) do
     graphiql_config = %{
-      fetch_path: Keyword.get(opts, :fetch_path),
+      graphql_endpoint: Keyword.get(opts, :graphql_endpoint),
       headers: Keyword.get(opts, :headers, %{}),
     }
     plug_config = Absinthe.Plug.init(opts)
@@ -73,10 +79,11 @@ defmodule Absinthe.Plug.GraphiQL do
         |> Poison.encode!(pretty: true)
         |> js_escape
 
-        fetch_path = Map.get config, :fetch_path
+        graphql_endpoint = Map.get config, :graphql_endpoint
         headers = Map.get config, :headers, %{}
 
-        html = graphiql_html(@graphiql_version, query, var_string, result, fetch_path, headers)
+        html = graphiql_html(@graphiql_version, query, var_string, result,
+                             graphql_endpoint, headers)
         conn
         |> put_resp_content_type("text/html")
         |> send_resp(200, html)

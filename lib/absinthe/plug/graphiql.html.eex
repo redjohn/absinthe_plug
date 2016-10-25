@@ -53,8 +53,8 @@ add "&raw" to the end of the URL within a browser.
       }
     }
     var fetchURL =
-      <%= if fetch_path do %>
-        window.location.origin + '<%= fetch_path %>' + locationQuery(otherParams);
+      <%= if graphql_endpoint do %>
+        '<%= graphql_endpoint %>' + locationQuery(otherParams);
       <% else %>
          locationQuery(otherParams);
       <% end %>
